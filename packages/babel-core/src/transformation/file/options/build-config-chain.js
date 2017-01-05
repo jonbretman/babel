@@ -11,6 +11,7 @@ let jsonCache   = {};
 
 const BABELIGNORE_FILENAME = ".babelignore";
 const BABELRC_FILENAME     = ".babelrc";
+const BABELRC_JS_FILENAME  = ".babelrc.js";
 const PACKAGE_FILENAME     = "package.json";
 
 function exists(filename) {
@@ -65,6 +66,12 @@ class ConfigChainBuilder {
           foundConfig = true;
         }
 
+        let jsConfigLog = path.join(loc, BABELRC_JS_FILENAME);
+        if (!foundConfig && exists(jsConfigLog)) {
+          this.addConfig(jsConfigLog);
+          foundConfig = true;
+        }
+
         let pkgLoc = path.join(loc, PACKAGE_FILENAME);
         if (!foundConfig && exists(pkgLoc)) {
           foundConfig = this.addConfig(pkgLoc, "babel", JSON);
@@ -107,15 +114,26 @@ class ConfigChainBuilder {
 
     this.resolvedConfigs.push(loc);
 
-    let content = fs.readFileSync(loc, "utf8");
     let options;
 
-    try {
-      options = jsonCache[content] = jsonCache[content] || json.parse(content);
-      if (key) options = options[key];
-    } catch (err) {
-      err.message = `${loc}: Error while parsing JSON - ${err.message}`;
-      throw err;
+    if (path.extname(loc) == ".js") {
+      try {
+        options = require(loc);
+        if (key) options = options[key];
+      } catch (err) {
+        err.message = `${loc}: Error while requiring config file - ${err.message}`;
+        throw err;
+      }
+    } else {
+      let content = fs.readFileSync(loc, "utf8");
+
+      try {
+        options = jsonCache[content] = jsonCache[content] || json.parse(content);
+        if (key) options = options[key];
+      } catch (err) {
+        err.message = `${loc}: Error while parsing JSON - ${err.message}`;
+        throw err;
+      }
     }
 
     this.mergeConfig({

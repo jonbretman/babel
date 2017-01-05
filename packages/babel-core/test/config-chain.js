@@ -294,4 +294,42 @@ describe("buildConfigChain", function () {
 
     assert.deepEqual(chain, expected);
   });
+
+  it("js config", function () {
+
+    let chain = buildConfigChain({
+      filename: fixture("js", "src.js")
+    });
+
+    let expected = [
+      {
+        options: {
+          plugins: ["js-plugin"]
+        },
+        alias: fixture("js", ".babelrc.js"),
+        loc: fixture("js", ".babelrc.js"),
+        dirname: fixture("js")
+      },
+      {
+        options: {
+          ignore: [
+            "root-ignore"
+          ]
+        },
+        alias: fixture(".babelignore"),
+        loc: fixture(".babelignore"),
+        dirname: fixture()
+      },
+      {
+        options: {
+          filename: fixture("js", "src.js")
+        },
+        alias: "base",
+        loc: "base",
+        dirname: fixture("js")
+      }
+    ];
+
+    assert.deepEqual(chain, expected);
+  });
 });
